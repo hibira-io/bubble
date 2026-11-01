@@ -1,0 +1,331 @@
+<script src="https://cdn.jsdelivr.net/npm/pusher-js@8.5.0/dist/web/pusher.min.js"></script>
+<script>
+/* Hibira Realtime for Bubble: one shared WebSocket per app key, any number of
+   Hibira Channel elements on the page. https://github.com/hibira-io/bubble */
+(function () {
+  if (window.HibiraBubble) return;
+
+  var AUTH_TIMEOUT_MS = 15000;
+  var connections = {};
+
+  function parseHost(raw) {
+    var host = String(raw || '').trim() || 'ws.hibira.io';
+    var tls = true;
+    var m = host.match(/^(wss?|https?):\/\//i);
+    if (m) {
+      tls = /^(wss|https)$/i.test(m[1]);
+      host = host.slice(m[0].length);
+    }
+    host = host.replace(/\/.*$/, '');
+    var port = tls ? 443 : 80;
+    var pm = host.match(/:(\d+)$/);
+    if (pm) {
+      port = Number(pm[1]);
+      host = host.slice(0, -pm[0].length);
+    }
+    return { host: host, port: port, tls: tls };
+  }
+
+  function splitList(value) {
+    return String(value || '')
+      .split(/[,\n]/)
+      .map(function (s) { return s.trim(); })
+      .filter(function (s) { return s !== ''; });
+  }
+
+  function toText(value) {
+    if (value === undefined || value === null) return '';
+    if (typeof value === 'string') return value;
+    try { return JSON.stringify(value); } catch (e) { return String(value); }
+  }
+
+  function readKey(data, key) {
+    if (!key || data === null || typeof data !== 'object') return '';
+    var cur = data;
+    var parts = String(key).split('.');
+    for (var i = 0; i < parts.length; i++) {
+      if (cur === null || typeof cur !== 'object') return '';
+      cur = cur[parts[i]];
+    }
+    return toText(cur);
+  }
+
+  function channelKind(name) {
+    if (name.indexOf('presence-') === 0) return 'presence';
+    if (name.indexOf('private-') === 0) return 'private';
+    return 'public';
+  }
+
+  // Shared connection per app key + host. Private and presence channels are
+  // authorized by the element that owns the channel, through a Bubble workflow.
+  function connect(key, rawHost) {
+    var h = parseHost(rawHost);
+    var id = key + '@' + h.host + ':' + h.port + (h.tls ? 's' : '');
+    if (connections[id]) return connections[id];
+    var conn = { id: id, owners: {}, listeners: [] };
+    conn.pusher = new window.Pusher(key, {
+      cluster: 'hkg',
+      wsHost: h.host,
+      wsPort: h.tls ? 80 : h.port,
+      wssPort: h.tls ? h.port : 443,
+      forceTLS: h.tls,
+      enabledTransports: ['ws', 'wss'],
+      disableStats: true,
+      channelAuthorization: {
+        customHandler: function (params, callback) {
+          var owner = conn.owners[params.channelName];
+          if (!owner) {
+            callback(new Error('No Hibira Channel element owns ' + params.channelName), null);
+            return;
+          }
+          owner.authorize(params.socketId, params.channelName, callback);
+        }
+      }
+    });
+    conn.pusher.connection.bind('state_change', function (states) {
+      conn.listeners.slice().forEach(function (fn) { fn(states.current); });
+    });
+    connections[id] = conn;
+    return conn;
+  }
+
+  // One Bubble element instance. "bubble" is { publish(name, value), trigger(name) }.
+  function Element(bubble) {
+    this.bubble = bubble;
+    this.conn = null;
+    this.channel = null;
+    this.name = '';
+    this.pendingAuth = null;
+    this.members = {};
+    this.count = 0;
+    this.options = {};
+    var self = this;
+    this.onState = function (state) { self.connectionChanged(state); };
+  }
+
+  Element.prototype.publish = function (name, value) { this.bubble.publish(name, value); };
+  Element.prototype.trigger = function (name) { this.bubble.trigger(name); };
+
+  Element.prototype.fail = function (message) {
+    this.publish('error', message);
+    this.trigger('error');
+  };
+
+  Element.prototype.update = function (props) {
+    this.options = {
+      events: splitList(props.events),
+      valueKey: String(props.value_key || '').trim(),
+      nameKey: String(props.name_key || '').trim() || 'name'
+    };
+    var key = String(props.app_key || '').trim();
+    if (!key) {
+      this.fail('Enter your Hibira app key in the plugin settings (Plugins tab).');
+      return;
+    }
+    if (!window.Pusher) {
+      this.fail('The Pusher client did not load. Check that cdn.jsdelivr.net is not blocked.');
+      return;
+    }
+    var conn = connect(key, props.host);
+    if (conn !== this.conn) {
+      this.leave();
+      if (this.conn) this.detach();
+      this.conn = conn;
+      conn.listeners.push(this.onState);
+      this.connectionChanged(conn.pusher.connection.state);
+    }
+    var name = String(props.channel || '').trim();
+    if (name !== this.name) {
+      this.leave();
+      if (name) this.join(name);
+    }
+  };
+
+  Element.prototype.detach = function () {
+    var i = this.conn.listeners.indexOf(this.onState);
+    if (i >= 0) this.conn.listeners.splice(i, 1);
+  };
+
+  Element.prototype.connectionChanged = function (state) {
+    this.publish('connection_state', state);
+    this.publish('socket_id', (this.conn && this.conn.pusher.connection.socket_id) || '');
+    if (state === 'connected') this.trigger('connected');
+    if (state === 'unavailable' || state === 'failed' || state === 'disconnected') this.trigger('disconnected');
+  };
+
+  Element.prototype.join = function (name) {
+    var self = this;
+    var conn = this.conn;
+    if (conn.owners[name] && conn.owners[name] !== this) {
+      this.fail('Another Hibira Channel element on this page already uses ' + name + '.');
+      return;
+    }
+    this.name = name;
+    conn.owners[name] = this;
+    var channel = conn.pusher.subscribe(name);
+    this.channel = channel;
+    this.publish('channel_type', channelKind(name));
+
+    channel.bind_global(function (event, data) {
+      if (self.channel !== channel) return;
+      if (event === 'pusher:subscription_succeeded') return self.subscribed(data);
+      if (event === 'pusher:subscription_error') return self.subscriptionFailed(data);
+      if (event === 'pusher:member_added') return self.memberChanged(data, true);
+      if (event === 'pusher:member_removed') return self.memberChanged(data, false);
+      if (event.indexOf('pusher:') === 0 || event.indexOf('pusher_internal:') === 0) return;
+      if (self.options.events.length && self.options.events.indexOf(event) < 0) return;
+      self.received(event, data, name);
+    });
+  };
+
+  Element.prototype.leave = function () {
+    if (!this.channel) { this.name = ''; return; }
+    var name = this.name;
+    this.channel.unbind_global();
+    if (this.conn.owners[name] === this) {
+      delete this.conn.owners[name];
+      this.conn.pusher.unsubscribe(name);
+    }
+    if (this.pendingAuth) {
+      this.pendingAuth.callback(new Error('unsubscribed'), null);
+      clearTimeout(this.pendingAuth.timer);
+      this.pendingAuth = null;
+    }
+    this.channel = null;
+    this.name = '';
+    this.members = {};
+    this.publish('subscribed', false);
+    this.publishMembers();
+  };
+
+  Element.prototype.authorize = function (socketId, channelName, callback) {
+    var self = this;
+    if (this.pendingAuth) clearTimeout(this.pendingAuth.timer);
+    var pending = { callback: callback, channel: channelName };
+    pending.timer = setTimeout(function () {
+      if (self.pendingAuth !== pending) return;
+      self.pendingAuth = null;
+      callback(new Error('No "Complete authorization" within 15 seconds. Add a workflow for the "authorization is needed" event.'), null);
+    }, AUTH_TIMEOUT_MS);
+    this.pendingAuth = pending;
+    this.publish('auth_socket_id', socketId);
+    this.publish('auth_channel', channelName);
+    this.trigger('authorization_needed');
+  };
+
+  Element.prototype.completeAuthorization = function (props) {
+    var pending = this.pendingAuth;
+    if (!pending) return;
+    this.pendingAuth = null;
+    clearTimeout(pending.timer);
+    var error = String(props.error || '').trim();
+    var auth = String(props.auth || '').trim();
+    if (error || !auth) {
+      pending.callback(new Error(error || 'Authorization was refused (empty auth).'), null);
+      return;
+    }
+    var result = { auth: auth };
+    var channelData = String(props.channel_data || '').trim();
+    if (channelData) result.channel_data = channelData;
+    pending.callback(null, result);
+  };
+
+  Element.prototype.subscribed = function (data) {
+    this.publish('subscribed', true);
+    this.publish('error', '');
+    if (data && data.presence) {
+      this.members = {};
+      var hash = data.presence.hash || {};
+      for (var id in hash) this.members[id] = hash[id];
+      this.publishMembers();
+    } else if (this.channel && this.channel.members && this.channel.members.me) {
+      this.members = {};
+      var self = this;
+      this.channel.members.each(function (m) { self.members[m.id] = m.info; });
+      this.publishMembers();
+    }
+    if (this.channel && this.channel.members && this.channel.members.me) {
+      var me = this.channel.members.me;
+      this.publish('my_id', String(me.id));
+      this.publish('my_name', readKey(me.info, this.options.nameKey));
+    }
+    this.trigger('subscribed');
+  };
+
+  Element.prototype.subscriptionFailed = function (data) {
+    var message = (data && (data.error || data.message)) || ('status ' + ((data && data.status) || 'unknown'));
+    this.publish('subscribed', false);
+    this.fail('Could not subscribe to ' + this.name + ': ' + toText(message));
+  };
+
+  Element.prototype.memberChanged = function (member, joined) {
+    var id = String(member.user_id !== undefined ? member.user_id : member.id);
+    var info = member.user_info !== undefined ? member.user_info : member.info;
+    if (joined) this.members[id] = info;
+    else {
+      info = this.members[id];
+      delete this.members[id];
+    }
+    this.publishMembers();
+    this.publish('member_id', id);
+    this.publish('member_name', readKey(info, this.options.nameKey));
+    this.trigger(joined ? 'member_joined' : 'member_left');
+  };
+
+  Element.prototype.publishMembers = function () {
+    var ids = Object.keys(this.members);
+    var self = this;
+    this.publish('member_ids', ids);
+    this.publish('member_names', ids.map(function (id) { return readKey(self.members[id], self.options.nameKey); }));
+    this.publish('member_count', ids.length);
+  };
+
+  Element.prototype.received = function (event, data, channelName) {
+    this.count += 1;
+    this.publish('last_event', event);
+    this.publish('last_data', toText(data));
+    this.publish('last_value', readKey(data, this.options.valueKey));
+    this.publish('last_channel', channelName);
+    this.publish('event_count', this.count);
+    this.trigger('event_received');
+  };
+
+  Element.prototype.sendClientEvent = function (props) {
+    if (!this.channel || !this.channel.subscribed) {
+      this.fail('Join a private or presence channel before sending client events.');
+      return;
+    }
+    var event = String(props.event || '').trim();
+    if (event.indexOf('client-') !== 0) event = 'client-' + event;
+    var raw = props.data === undefined || props.data === null ? '' : String(props.data);
+    var data;
+    try { data = raw.trim() ? JSON.parse(raw) : {}; } catch (e) { data = { text: raw }; }
+    if (!this.channel.trigger(event, data)) this.fail('Client events need a private or presence channel and client events enabled on the app.');
+  };
+
+  Element.prototype.reconnect = function () {
+    if (!this.conn) return;
+    var p = this.conn.pusher;
+    if (p.connection.state === 'connected' || p.connection.state === 'connecting') return;
+    p.connect();
+  };
+
+  Element.prototype.disconnect = function () {
+    if (this.conn) this.conn.pusher.disconnect();
+  };
+
+  Element.prototype.destroy = function () {
+    this.leave();
+    if (this.conn) this.detach();
+    this.conn = null;
+  };
+
+  window.HibiraBubble = {
+    Element: Element,
+    connect: connect,
+    parseHost: parseHost,
+    readKey: readKey,
+    connections: connections
+  };
+})();
+</script>

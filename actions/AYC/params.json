@@ -1,0 +1,106 @@
+{
+    "category": "plugins",
+    "display": "Hibira - Request approval",
+    "doc": "Ask a person to approve or reject something. Hibira gives you a link to share (and can announce it on a channel or by push); check the answer with \"Hibira - Get approval\".",
+    "fields": {
+        "AYp": {
+            "caption": "Title",
+            "doc": "What needs a decision, such as Refund order #1042 ($180)?",
+            "editor": "DynamicValue",
+            "name": "title",
+            "rank": 0,
+            "value": "text"
+        },
+        "AYq": {
+            "caption": "Details",
+            "doc": "Optional. More context shown on the approval page.",
+            "editor": "DynamicValue",
+            "long_text": true,
+            "name": "details",
+            "optional": true,
+            "rank": 1,
+            "value": "text"
+        },
+        "AYr": {
+            "caption": "Choices",
+            "doc": "Optional. Comma-separated answers. Default: Approve, Reject.",
+            "editor": "DynamicValue",
+            "name": "choices",
+            "optional": true,
+            "rank": 2,
+            "value": "text"
+        },
+        "AYs": {
+            "caption": "Expires in (minutes)",
+            "doc": "Optional. Default 60.",
+            "editor": "DynamicValue",
+            "name": "expires_in_minutes",
+            "optional": true,
+            "rank": 3,
+            "value": "number"
+        },
+        "AYt": {
+            "caption": "Channel",
+            "doc": "Optional. A channel to announce the request and its answer on, such as private-hibira-approvals.ops.",
+            "editor": "DynamicValue",
+            "name": "channel",
+            "optional": true,
+            "rank": 4,
+            "value": "text"
+        },
+        "AYu": {
+            "caption": "Asked by",
+            "doc": "Optional. Who is asking, shown on the approval page. Default: Workflow.",
+            "editor": "DynamicValue",
+            "name": "agent",
+            "optional": true,
+            "rank": 5,
+            "value": "text"
+        },
+        "AYv": {
+            "caption": "Push to users",
+            "doc": "Optional. Comma-separated Hibira push user IDs to notify.",
+            "editor": "DynamicValue",
+            "name": "push_users",
+            "optional": true,
+            "rank": 6,
+            "value": "text"
+        },
+        "AYw": {
+            "caption": "Push to interests",
+            "doc": "Optional. Comma-separated push interests to notify.",
+            "editor": "DynamicValue",
+            "name": "push_interests",
+            "optional": true,
+            "rank": 7,
+            "value": "text"
+        }
+    },
+    "return_value": {
+        "AYx": {
+            "caption": "Approval ID",
+            "name": "approval_id",
+            "rank": 0,
+            "value": "text"
+        },
+        "AYy": {
+            "caption": "Approval link",
+            "name": "url",
+            "rank": 1,
+            "value": "text"
+        },
+        "AYz": {
+            "caption": "Status",
+            "name": "status",
+            "rank": 2,
+            "value": "text"
+        },
+        "AZA": {
+            "caption": "Error message",
+            "name": "error",
+            "rank": 3,
+            "value": "text"
+        }
+    },
+    "type": "server_side"
+}

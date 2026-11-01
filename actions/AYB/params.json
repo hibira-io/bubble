@@ -1,0 +1,72 @@
+{
+    "category": "plugins",
+    "display": "Hibira - Authorize channel",
+    "doc": "Sign a private or presence channel subscription for the current user. Use it in the workflow for a Hibira Channel's \"authorization is needed\" event, before the element's \"Complete authorization\". Add an Only when condition to decide who may join.",
+    "fields": {
+        "AYh": {
+            "caption": "Socket ID",
+            "doc": "The element's Auth socket ID.",
+            "editor": "DynamicValue",
+            "name": "socket_id",
+            "rank": 0,
+            "value": "text"
+        },
+        "AYi": {
+            "caption": "Channel",
+            "doc": "The element's Auth channel.",
+            "editor": "DynamicValue",
+            "name": "channel",
+            "rank": 1,
+            "value": "text"
+        },
+        "AYj": {
+            "caption": "User ID",
+            "doc": "Presence channels: a stable ID, such as Current User's unique id.",
+            "editor": "DynamicValue",
+            "name": "user_id",
+            "optional": true,
+            "rank": 2,
+            "value": "text"
+        },
+        "AYk": {
+            "caption": "User name",
+            "doc": "Presence channels: the name others see (stored as name in the member's info).",
+            "editor": "DynamicValue",
+            "name": "user_name",
+            "optional": true,
+            "rank": 3,
+            "value": "text"
+        },
+        "AYl": {
+            "caption": "User info (JSON)",
+            "doc": "Presence channels, optional: more member info as a JSON object, such as {\"avatar\": \"https://...\"}.",
+            "editor": "DynamicValue",
+            "long_text": true,
+            "name": "user_info",
+            "optional": true,
+            "rank": 4,
+            "value": "text"
+        }
+    },
+    "return_value": {
+        "AYm": {
+            "caption": "Auth",
+            "name": "auth",
+            "rank": 0,
+            "value": "text"
+        },
+        "AYn": {
+            "caption": "Channel data",
+            "name": "channel_data",
+            "rank": 1,
+            "value": "text"
+        },
+        "AYo": {
+            "caption": "Error message",
+            "name": "error",
+            "rank": 2,
+            "value": "text"
+        }
+    },
+    "type": "server_side"
+}

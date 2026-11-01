@@ -1,0 +1,5 @@
+{
+    "caption": "Reconnect",
+    "doc": "Open the connection again after Disconnect. Hibira reconnects by itself after network drops.",
+    "fields": {}
+}

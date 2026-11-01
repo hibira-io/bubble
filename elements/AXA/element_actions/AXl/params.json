@@ -1,0 +1,23 @@
+{
+    "caption": "Send client event",
+    "doc": "Send an event straight from this browser to everyone else on the channel (private and presence channels, with client events enabled on the app). The event name gets the client- prefix if it is missing.",
+    "fields": {
+        "AXr": {
+            "caption": "Event",
+            "editor": "DynamicValue",
+            "name": "event",
+            "rank": 0,
+            "value": "text"
+        },
+        "AXs": {
+            "caption": "Data",
+            "doc": "JSON such as {\"typing\": true}, or plain text (sent as {\"text\": ...}).",
+            "editor": "DynamicValue",
+            "long_text": true,
+            "name": "data",
+            "optional": true,
+            "rank": 1,
+            "value": "text"
+        }
+    }
+}

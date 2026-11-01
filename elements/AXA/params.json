@@ -1,0 +1,269 @@
+{
+    "add_is_visible": true,
+    "category": "visual elements",
+    "default_dim": {
+        "height": 24,
+        "width": 160
+    },
+    "display": "Hibira Channel",
+    "events": {
+        "AXZ": {
+            "caption": "an event is received",
+            "name": "event_received"
+        },
+        "AXa": {
+            "caption": "the channel is joined",
+            "name": "subscribed"
+        },
+        "AXb": {
+            "caption": "authorization is needed",
+            "name": "authorization_needed"
+        },
+        "AXc": {
+            "caption": "a member joins",
+            "name": "member_joined"
+        },
+        "AXd": {
+            "caption": "a member leaves",
+            "name": "member_left"
+        },
+        "AXe": {
+            "caption": "is connected",
+            "name": "connected"
+        },
+        "AXf": {
+            "caption": "is disconnected",
+            "name": "disconnected"
+        },
+        "AXg": {
+            "caption": "an error occurs",
+            "name": "error"
+        }
+    },
+    "fields": {
+        "AXB": {
+            "caption": "Channel",
+            "doc": "Channel to join, such as orders, private-team-42 or presence-room-7. The prefix picks the type: private- and presence- channels need the \"authorization is needed\" workflow. Change it to switch channels; empty leaves the channel.",
+            "editor": "DynamicValue",
+            "name": "channel",
+            "rank": 0,
+            "value": "text"
+        },
+        "AXC": {
+            "caption": "Only these events",
+            "doc": "Optional. Comma-separated event names to react to. Empty: every event on the channel.",
+            "editor": "DynamicValue",
+            "name": "events",
+            "optional": true,
+            "rank": 1,
+            "value": "text"
+        },
+        "AXD": {
+            "caption": "Value key",
+            "doc": "Optional. A key of the event's JSON data (dots for nested keys, such as order.status) copied into the Last value state.",
+            "editor": "DynamicValue",
+            "name": "value_key",
+            "optional": true,
+            "rank": 2,
+            "value": "text"
+        },
+        "AXE": {
+            "caption": "Member name key",
+            "default_val": "name",
+            "doc": "Presence channels: the key of each member's info shown in Member names. Default: name.",
+            "editor": "DynamicValue",
+            "name": "name_key",
+            "optional": true,
+            "rank": 3,
+            "value": "text"
+        },
+        "AXF": {
+            "caption": "Show status",
+            "default_val": false,
+            "doc": "Show a small connection badge in the element. Off: the element draws nothing.",
+            "editor": "Checkbox",
+            "name": "show_status",
+            "rank": 4
+        }
+    },
+    "icon": "ion-radio-waves",
+    "property_applications": {
+        "MinWidth": true,
+        "resizable": true
+    },
+    "states": {
+        "AXG": {
+            "caption": "Connection state",
+            "doc": "initialized, connecting, connected, unavailable, failed or disconnected.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return 'initialized';\n}"
+            },
+            "name": "connection_state",
+            "value": "text"
+        },
+        "AXH": {
+            "caption": "Socket ID",
+            "doc": "This browser's socket ID. Pass it to \"Hibira - Publish event\" to skip the sender.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return '';\n}"
+            },
+            "name": "socket_id",
+            "value": "text"
+        },
+        "AXI": {
+            "caption": "Subscribed",
+            "doc": "yes once the channel is joined.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return false;\n}"
+            },
+            "name": "subscribed",
+            "value": "boolean"
+        },
+        "AXJ": {
+            "caption": "Channel type",
+            "doc": "public, private or presence.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return '';\n}"
+            },
+            "name": "channel_type",
+            "value": "text"
+        },
+        "AXK": {
+            "caption": "Last event",
+            "doc": "Name of the last event received.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return '';\n}"
+            },
+            "name": "last_event",
+            "value": "text"
+        },
+        "AXL": {
+            "caption": "Last data",
+            "doc": "Data of the last event, as text (JSON for objects).",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return '';\n}"
+            },
+            "name": "last_data",
+            "value": "text"
+        },
+        "AXM": {
+            "caption": "Last value",
+            "doc": "The Value key of the last event's data.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return '';\n}"
+            },
+            "name": "last_value",
+            "value": "text"
+        },
+        "AXN": {
+            "caption": "Last channel",
+            "doc": "Channel of the last event.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return '';\n}"
+            },
+            "name": "last_channel",
+            "value": "text"
+        },
+        "AXO": {
+            "caption": "Event count",
+            "doc": "Events received since the page opened.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return 0;\n}"
+            },
+            "name": "event_count",
+            "value": "number"
+        },
+        "AXP": {
+            "caption": "Member count",
+            "doc": "Presence channels: how many members are online.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return 0;\n}"
+            },
+            "name": "member_count",
+            "value": "number"
+        },
+        "AXQ": {
+            "caption": "Member IDs",
+            "doc": "Presence channels: IDs of the members online.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return [];\n}"
+            },
+            "is_list": true,
+            "name": "member_ids",
+            "value": "text"
+        },
+        "AXR": {
+            "caption": "Member names",
+            "doc": "Presence channels: names of the members online (Member name key).",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return [];\n}"
+            },
+            "is_list": true,
+            "name": "member_names",
+            "value": "text"
+        },
+        "AXS": {
+            "caption": "My ID",
+            "doc": "Presence channels: this user's member ID.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return '';\n}"
+            },
+            "name": "my_id",
+            "value": "text"
+        },
+        "AXT": {
+            "caption": "My name",
+            "doc": "Presence channels: this user's name.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return '';\n}"
+            },
+            "name": "my_name",
+            "value": "text"
+        },
+        "AXU": {
+            "caption": "Changed member ID",
+            "doc": "The member who just joined or left.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return '';\n}"
+            },
+            "name": "member_id",
+            "value": "text"
+        },
+        "AXV": {
+            "caption": "Changed member name",
+            "doc": "The name of the member who just joined or left.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return '';\n}"
+            },
+            "name": "member_name",
+            "value": "text"
+        },
+        "AXW": {
+            "caption": "Auth socket ID",
+            "doc": "Pass to \"Hibira - Authorize channel\" when authorization is needed.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return '';\n}"
+            },
+            "name": "auth_socket_id",
+            "value": "text"
+        },
+        "AXX": {
+            "caption": "Auth channel",
+            "doc": "Pass to \"Hibira - Authorize channel\" when authorization is needed.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return '';\n}"
+            },
+            "name": "auth_channel",
+            "value": "text"
+        },
+        "AXY": {
+            "caption": "Error",
+            "doc": "The last problem, such as a refused subscription.",
+            "initialization_code": {
+                "fn": "function(properties, context) {\n    return '';\n}"
+            },
+            "name": "error",
+            "value": "text"
+        }
+    }
+}

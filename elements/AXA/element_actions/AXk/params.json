@@ -1,0 +1,33 @@
+{
+    "caption": "Complete authorization",
+    "doc": "Finish joining a private or presence channel. Run it after \"Hibira - Authorize channel\" in the workflow for this element's \"authorization is needed\" event, with that step's Auth and Channel data.",
+    "fields": {
+        "AXo": {
+            "caption": "Auth",
+            "doc": "Result of step \"Hibira - Authorize channel\"'s Auth. Leave empty to refuse.",
+            "editor": "DynamicValue",
+            "name": "auth",
+            "optional": true,
+            "rank": 0,
+            "value": "text"
+        },
+        "AXp": {
+            "caption": "Channel data",
+            "doc": "Result of step \"Hibira - Authorize channel\"'s Channel data (presence channels only).",
+            "editor": "DynamicValue",
+            "name": "channel_data",
+            "optional": true,
+            "rank": 1,
+            "value": "text"
+        },
+        "AXq": {
+            "caption": "Refuse with message",
+            "doc": "Optional. A reason to refuse this user, shown in the element's Error state.",
+            "editor": "DynamicValue",
+            "name": "error",
+            "optional": true,
+            "rank": 2,
+            "value": "text"
+        }
+    }
+}
