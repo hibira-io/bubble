@@ -1,0 +1,57 @@
+{
+    "category": "plugins",
+    "display": "Hibira - Get approval",
+    "doc": "Get the answer to an approval request. Status is pending, approved, rejected or expired.",
+    "fields": {
+        "AZB": {
+            "caption": "Approval ID",
+            "doc": "From \"Hibira - Request approval\".",
+            "editor": "DynamicValue",
+            "name": "approval_id",
+            "rank": 0,
+            "value": "text"
+        },
+        "AZC": {
+            "caption": "Wait (seconds)",
+            "doc": "Optional, 0 to 25. Wait this long for an answer before returning pending.",
+            "editor": "DynamicValue",
+            "name": "wait_seconds",
+            "optional": true,
+            "rank": 1,
+            "value": "number"
+        }
+    },
+    "return_value": {
+        "AZD": {
+            "caption": "Status",
+            "name": "status",
+            "rank": 0,
+            "value": "text"
+        },
+        "AZE": {
+            "caption": "Answered",
+            "name": "answered",
+            "rank": 1,
+            "value": "boolean"
+        },
+        "AZF": {
+            "caption": "Choice",
+            "name": "choice",
+            "rank": 2,
+            "value": "text"
+        },
+        "AZG": {
+            "caption": "Comment",
+            "name": "comment",
+            "rank": 3,
+            "value": "text"
+        },
+        "AZH": {
+            "caption": "Error message",
+            "name": "error",
+            "rank": 4,
+            "value": "text"
+        }
+    },
+    "type": "server_side"
+}

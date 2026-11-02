@@ -1,0 +1,37 @@
+{
+    "category": "plugins",
+    "display": "Hibira - Get channel users",
+    "doc": "List the users online in a presence channel, from the server.",
+    "fields": {
+        "AZI": {
+            "caption": "Channel",
+            "doc": "A presence- channel.",
+            "editor": "DynamicValue",
+            "name": "channel",
+            "rank": 0,
+            "value": "text"
+        }
+    },
+    "return_value": {
+        "AZJ": {
+            "caption": "User IDs",
+            "is_list": true,
+            "name": "user_ids",
+            "rank": 0,
+            "value": "text"
+        },
+        "AZK": {
+            "caption": "User count",
+            "name": "user_count",
+            "rank": 1,
+            "value": "number"
+        },
+        "AZL": {
+            "caption": "Error message",
+            "name": "error",
+            "rank": 2,
+            "value": "text"
+        }
+    },
+    "type": "server_side"
+}

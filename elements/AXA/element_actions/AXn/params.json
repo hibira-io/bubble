@@ -1,0 +1,5 @@
+{
+    "caption": "Disconnect",
+    "doc": "Close the page's Hibira connection (it is shared by every Hibira Channel element on the page).",
+    "fields": {}
+}

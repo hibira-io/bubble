@@ -1,0 +1,66 @@
+{
+    "category": "plugins",
+    "display": "Hibira - Publish event",
+    "doc": "Send an event to one or more channels. Every browser with a Hibira Channel element on those channels gets it.",
+    "fields": {
+        "AYa": {
+            "caption": "Channels",
+            "doc": "One channel, or several separated by commas (at most 100).",
+            "editor": "DynamicValue",
+            "name": "channels",
+            "rank": 0,
+            "value": "text"
+        },
+        "AYb": {
+            "caption": "Event",
+            "doc": "Event name, such as order-updated.",
+            "editor": "DynamicValue",
+            "name": "event",
+            "rank": 1,
+            "value": "text"
+        },
+        "AYc": {
+            "caption": "Data",
+            "doc": "JSON such as {\"status\": \"shipped\"}, or plain text (sent as {\"text\": ...}). Ignored when Data fields is filled in.",
+            "editor": "DynamicValue",
+            "long_text": true,
+            "name": "data",
+            "optional": true,
+            "rank": 2,
+            "value": "text"
+        },
+        "AYd": {
+            "caption": "Data fields",
+            "doc": "Optional. Key/value pairs sent as a JSON object, instead of Data.",
+            "editor": "key_value_list",
+            "name": "data_fields",
+            "optional": true,
+            "rank": 3,
+            "value": "text"
+        },
+        "AYe": {
+            "caption": "Skip socket ID",
+            "doc": "Optional. A Hibira Channel's Socket ID: that browser won't get its own event.",
+            "editor": "DynamicValue",
+            "name": "socket_id",
+            "optional": true,
+            "rank": 4,
+            "value": "text"
+        }
+    },
+    "return_value": {
+        "AYf": {
+            "caption": "Success",
+            "name": "ok",
+            "rank": 0,
+            "value": "boolean"
+        },
+        "AYg": {
+            "caption": "Error message",
+            "name": "error",
+            "rank": 1,
+            "value": "text"
+        }
+    },
+    "type": "server_side"
+}
