@@ -1,0 +1,790 @@
+{
+  "dependencies": {
+    "use_jquery": true,
+    "plugin_api_version": 4
+  },
+  "meta_data": {
+    "categories": {
+      "0": "technical",
+      "1": "productivity",
+      "2": "social network"
+    },
+    "data_tracked": false,
+    "demo_page": "",
+    "description": "Realtime updates, presence (who's online), typing indicators and approvals for your Bubble app, on Hibira's hosted Pusher-compatible WebSockets. Drop a Hibira Channel element on a page, publish events from any workflow, and react to them instantly: live dashboards, chat, order tracking, notifications and collaborative pages. Free plan, no card.",
+    "designed_for": "both",
+    "license": "open_source",
+    "link": "https://hibira.io",
+    "name": "Hibira Realtime",
+    "plugin_instructions": "Hibira Realtime adds live updates, presence (\"who's online\") and approvals to your Bubble app, over Hibira's hosted WebSockets (Pusher-compatible, servers in Asia). Free plan: 100 connections, no card. https://hibira.io\n\nSETUP\n1. Create a free account at https://hibira.io and create an app. Copy its App ID, Key and Secret (the secret is shown once).\n2. On the app's Settings in the Hibira portal, add your Bubble domains to Allowed origins (for example https://yourapp.bubbleapps.io and your custom domain).\n3. In Bubble, open Plugins > Hibira Realtime and fill in App key, App ID and App secret. Leave Host empty (it defaults to ws.hibira.io).\n\nRECEIVE EVENTS\n4. Drop a \"Hibira Channel\" element on the page and set its Channel, such as orders or \"order-\" & Current page order's unique id.\n5. Add a workflow: When Hibira Channel an event is received. Read the element's Last event, Last data (text) and Last value (set Value key, such as status or order.status, to pull one value out of JSON data).\n\nSEND EVENTS\n6. In any workflow (front end or back end), add \"Hibira - Publish event\" with Channels, Event and Data (JSON or plain text, or Data fields key/value pairs). Pass a Hibira Channel's Socket ID in \"Skip socket ID\" so the sender doesn't get its own event.\n\nPRIVATE AND PRESENCE CHANNELS\nChannels named private-... or presence-... need your app's permission for each user:\n7. Add a workflow: When Hibira Channel authorization is needed.\n   Step 1: \"Hibira - Authorize channel\" with Socket ID = the element's Auth socket ID, Channel = the element's Auth channel, User ID = Current User's unique id, User name = Current User's name. Add an Only when condition to decide who may join.\n   Step 2: the element's \"Complete authorization\" with Auth = Result of step 1's Auth and Channel data = Result of step 1's Channel data.\nPresence channels then fill Member count, Member IDs, Member names, My ID, and fire \"a member joins\" / \"a member leaves\" (Changed member ID / name).\nOn private and presence channels, \"Send client event\" sends straight from the browser to the others (turn on client events in the Hibira app settings), for typing indicators and cursors.\n\nAPPROVALS\n\"Hibira - Request approval\" returns an Approval link to send to a person (and can announce it on a channel or by push). \"Hibira - Get approval\" returns Status (pending, approved, rejected, expired), Choice and Comment; Wait up to 25 seconds for the answer.\n\nTIPS\n- Every Hibira Channel element on a page shares one connection, so one visitor counts as one connection.\n- Several events can arrive faster than a workflow runs; use Event count or keep the event's data in one JSON event.\n- Errors show in the element's Error state and fire \"an error occurs\". Server actions return Success / Error message instead of stopping your workflow.\n\nDocs and source: https://github.com/hibira-io/bubble\n",
+    "sa_node_version": 22
+  },
+  "editor_counter": 2000,
+  "shared_keys": {
+    "AZM": {
+      "caption": "App key",
+      "type": "client_safe"
+    },
+    "AZN": {
+      "caption": "Host",
+      "type": "client_safe"
+    },
+    "AZO": {
+      "caption": "App ID",
+      "type": "secure"
+    },
+    "AZP": {
+      "caption": "App secret",
+      "type": "secure"
+    }
+  },
+  "plugin_elements": {
+    "AXA": {
+      "add_is_visible": true,
+      "category": "visual elements",
+      "default_dim": {
+        "height": 24,
+        "width": 160
+      },
+      "display": "Hibira Channel",
+      "events": {
+        "AXZ": {
+          "caption": "an event is received",
+          "name": "event_received"
+        },
+        "AXa": {
+          "caption": "the channel is joined",
+          "name": "subscribed"
+        },
+        "AXb": {
+          "caption": "authorization is needed",
+          "name": "authorization_needed"
+        },
+        "AXc": {
+          "caption": "a member joins",
+          "name": "member_joined"
+        },
+        "AXd": {
+          "caption": "a member leaves",
+          "name": "member_left"
+        },
+        "AXe": {
+          "caption": "is connected",
+          "name": "connected"
+        },
+        "AXf": {
+          "caption": "is disconnected",
+          "name": "disconnected"
+        },
+        "AXg": {
+          "caption": "an error occurs",
+          "name": "error"
+        }
+      },
+      "fields": {
+        "AXB": {
+          "caption": "Channel",
+          "doc": "Channel to join, such as orders, private-team-42 or presence-room-7. The prefix picks the type: private- and presence- channels need the \"authorization is needed\" workflow. Change it to switch channels; empty leaves the channel.",
+          "editor": "DynamicValue",
+          "name": "channel",
+          "rank": 0,
+          "value": "text"
+        },
+        "AXC": {
+          "caption": "Only these events",
+          "doc": "Optional. Comma-separated event names to react to. Empty: every event on the channel.",
+          "editor": "DynamicValue",
+          "name": "events",
+          "optional": true,
+          "rank": 1,
+          "value": "text"
+        },
+        "AXD": {
+          "caption": "Value key",
+          "doc": "Optional. A key of the event's JSON data (dots for nested keys, such as order.status) copied into the Last value state.",
+          "editor": "DynamicValue",
+          "name": "value_key",
+          "optional": true,
+          "rank": 2,
+          "value": "text"
+        },
+        "AXE": {
+          "caption": "Member name key",
+          "default_val": "name",
+          "doc": "Presence channels: the key of each member's info shown in Member names. Default: name.",
+          "editor": "DynamicValue",
+          "name": "name_key",
+          "optional": true,
+          "rank": 3,
+          "value": "text"
+        },
+        "AXF": {
+          "caption": "Show status",
+          "default_val": false,
+          "doc": "Show a small connection badge in the element. Off: the element draws nothing.",
+          "editor": "Checkbox",
+          "name": "show_status",
+          "rank": 4
+        }
+      },
+      "icon": "ion-radio-waves",
+      "property_applications": {
+        "MinWidth": true,
+        "resizable": true
+      },
+      "states": {
+        "AXG": {
+          "caption": "Connection state",
+          "doc": "initialized, connecting, connected, unavailable, failed or disconnected.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return 'initialized';\n}"
+          },
+          "name": "connection_state",
+          "value": "text"
+        },
+        "AXH": {
+          "caption": "Socket ID",
+          "doc": "This browser's socket ID. Pass it to \"Hibira - Publish event\" to skip the sender.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return '';\n}"
+          },
+          "name": "socket_id",
+          "value": "text"
+        },
+        "AXI": {
+          "caption": "Subscribed",
+          "doc": "yes once the channel is joined.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return false;\n}"
+          },
+          "name": "subscribed",
+          "value": "boolean"
+        },
+        "AXJ": {
+          "caption": "Channel type",
+          "doc": "public, private or presence.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return '';\n}"
+          },
+          "name": "channel_type",
+          "value": "text"
+        },
+        "AXK": {
+          "caption": "Last event",
+          "doc": "Name of the last event received.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return '';\n}"
+          },
+          "name": "last_event",
+          "value": "text"
+        },
+        "AXL": {
+          "caption": "Last data",
+          "doc": "Data of the last event, as text (JSON for objects).",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return '';\n}"
+          },
+          "name": "last_data",
+          "value": "text"
+        },
+        "AXM": {
+          "caption": "Last value",
+          "doc": "The Value key of the last event's data.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return '';\n}"
+          },
+          "name": "last_value",
+          "value": "text"
+        },
+        "AXN": {
+          "caption": "Last channel",
+          "doc": "Channel of the last event.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return '';\n}"
+          },
+          "name": "last_channel",
+          "value": "text"
+        },
+        "AXO": {
+          "caption": "Event count",
+          "doc": "Events received since the page opened.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return 0;\n}"
+          },
+          "name": "event_count",
+          "value": "number"
+        },
+        "AXP": {
+          "caption": "Member count",
+          "doc": "Presence channels: how many members are online.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return 0;\n}"
+          },
+          "name": "member_count",
+          "value": "number"
+        },
+        "AXQ": {
+          "caption": "Member IDs",
+          "doc": "Presence channels: IDs of the members online.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return [];\n}"
+          },
+          "is_list": true,
+          "name": "member_ids",
+          "value": "text"
+        },
+        "AXR": {
+          "caption": "Member names",
+          "doc": "Presence channels: names of the members online (Member name key).",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return [];\n}"
+          },
+          "is_list": true,
+          "name": "member_names",
+          "value": "text"
+        },
+        "AXS": {
+          "caption": "My ID",
+          "doc": "Presence channels: this user's member ID.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return '';\n}"
+          },
+          "name": "my_id",
+          "value": "text"
+        },
+        "AXT": {
+          "caption": "My name",
+          "doc": "Presence channels: this user's name.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return '';\n}"
+          },
+          "name": "my_name",
+          "value": "text"
+        },
+        "AXU": {
+          "caption": "Changed member ID",
+          "doc": "The member who just joined or left.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return '';\n}"
+          },
+          "name": "member_id",
+          "value": "text"
+        },
+        "AXV": {
+          "caption": "Changed member name",
+          "doc": "The name of the member who just joined or left.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return '';\n}"
+          },
+          "name": "member_name",
+          "value": "text"
+        },
+        "AXW": {
+          "caption": "Auth socket ID",
+          "doc": "Pass to \"Hibira - Authorize channel\" when authorization is needed.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return '';\n}"
+          },
+          "name": "auth_socket_id",
+          "value": "text"
+        },
+        "AXX": {
+          "caption": "Auth channel",
+          "doc": "Pass to \"Hibira - Authorize channel\" when authorization is needed.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return '';\n}"
+          },
+          "name": "auth_channel",
+          "value": "text"
+        },
+        "AXY": {
+          "caption": "Error",
+          "doc": "The last problem, such as a refused subscription.",
+          "initialization_code": {
+            "fn": "function(properties, context) {\n    return '';\n}"
+          },
+          "name": "error",
+          "value": "text"
+        }
+      },
+      "platform_type": "web",
+      "code": {
+        "initialize": {
+          "fn": "function(instance, context) {\n    instance.data.ready = false;\n    instance.data.status = $('<div></div>').css({\n        display: 'none', font: '12px/1.4 system-ui, sans-serif', color: '#475569',\n        padding: '2px 8px', borderRadius: '999px', background: '#f1f5f9',\n        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'\n    });\n    instance.canvas.append(instance.data.status);\n    if (!window.HibiraBubble) {\n        instance.publishState('error', 'The Hibira runtime did not load.');\n        return;\n    }\n    instance.data.hibira = new window.HibiraBubble.Element({\n        publish: function (name, value) {\n            instance.publishState(name, value);\n            if (name === 'connection_state' && instance.data.status) {\n                instance.data.status.text('Hibira: ' + value);\n            }\n        },\n        trigger: function (name) { instance.triggerEvent(name); }\n    });\n    instance.data.ready = true;\n}\n"
+        },
+        "update": {
+          "fn": "function(instance, properties, context) {\n    if (!instance.data.ready) return;\n    instance.data.status.css('display', properties.show_status ? 'inline-block' : 'none');\n    instance.data.hibira.update({\n        app_key: context.keys['App key'],\n        host: context.keys['Host'],\n        channel: properties.channel,\n        events: properties.events,\n        value_key: properties.value_key,\n        name_key: properties.name_key\n    });\n}\n"
+        },
+        "preview": {
+          "fn": "function(instance, properties) {\n    var label = properties.channel ? 'Hibira: ' + properties.channel : 'Hibira Channel';\n    instance.canvas.append($('<div></div>').text(label).css({\n        font: '12px/1.4 system-ui, sans-serif', color: '#0f172a', background: '#e0f2fe',\n        border: '1px dashed #38bdf8', borderRadius: '6px', padding: '4px 8px',\n        height: '100%', boxSizing: 'border-box', overflow: 'hidden', whiteSpace: 'nowrap'\n    }));\n}\n"
+        },
+        "reset": {
+          "fn": "function(instance, context) {\n    if (instance.data.ready) instance.data.hibira.destroy();\n}\n"
+        }
+      },
+      "headers": {
+        "snippet": "<script src=\"https://cdn.jsdelivr.net/npm/pusher-js@8.5.0/dist/web/pusher.min.js\"></script>\n<script>\n/* Hibira Realtime for Bubble: one shared WebSocket per app key, any number of\n   Hibira Channel elements on the page. https://github.com/hibira-io/bubble */\n(function () {\n  if (window.HibiraBubble) return;\n\n  var AUTH_TIMEOUT_MS = 15000;\n  var connections = {};\n\n  function parseHost(raw) {\n    var host = String(raw || '').trim() || 'ws.hibira.io';\n    var tls = true;\n    var m = host.match(/^(wss?|https?):\\/\\//i);\n    if (m) {\n      tls = /^(wss|https)$/i.test(m[1]);\n      host = host.slice(m[0].length);\n    }\n    host = host.replace(/\\/.*$/, '');\n    var port = tls ? 443 : 80;\n    var pm = host.match(/:(\\d+)$/);\n    if (pm) {\n      port = Number(pm[1]);\n      host = host.slice(0, -pm[0].length);\n    }\n    return { host: host, port: port, tls: tls };\n  }\n\n  function splitList(value) {\n    return String(value || '')\n      .split(/[,\\n]/)\n      .map(function (s) { return s.trim(); })\n      .filter(function (s) { return s !== ''; });\n  }\n\n  function toText(value) {\n    if (value === undefined || value === null) return '';\n    if (typeof value === 'string') return value;\n    try { return JSON.stringify(value); } catch (e) { return String(value); }\n  }\n\n  function readKey(data, key) {\n    if (!key || data === null || typeof data !== 'object') return '';\n    var cur = data;\n    var parts = String(key).split('.');\n    for (var i = 0; i < parts.length; i++) {\n      if (cur === null || typeof cur !== 'object') return '';\n      cur = cur[parts[i]];\n    }\n    return toText(cur);\n  }\n\n  function channelKind(name) {\n    if (name.indexOf('presence-') === 0) return 'presence';\n    if (name.indexOf('private-') === 0) return 'private';\n    return 'public';\n  }\n\n  // Shared connection per app key + host. Private and presence channels are\n  // authorized by the element that owns the channel, through a Bubble workflow.\n  function connect(key, rawHost) {\n    var h = parseHost(rawHost);\n    var id = key + '@' + h.host + ':' + h.port + (h.tls ? 's' : '');\n    if (connections[id]) return connections[id];\n    var conn = { id: id, owners: {}, listeners: [] };\n    conn.pusher = new window.Pusher(key, {\n      cluster: 'hkg',\n      wsHost: h.host,\n      wsPort: h.tls ? 80 : h.port,\n      wssPort: h.tls ? h.port : 443,\n      forceTLS: h.tls,\n      enabledTransports: ['ws', 'wss'],\n      disableStats: true,\n      channelAuthorization: {\n        customHandler: function (params, callback) {\n          var owner = conn.owners[params.channelName];\n          if (!owner) {\n            callback(new Error('No Hibira Channel element owns ' + params.channelName), null);\n            return;\n          }\n          owner.authorize(params.socketId, params.channelName, callback);\n        }\n      }\n    });\n    conn.pusher.connection.bind('state_change', function (states) {\n      conn.listeners.slice().forEach(function (fn) { fn(states.current); });\n    });\n    connections[id] = conn;\n    return conn;\n  }\n\n  // One Bubble element instance. \"bubble\" is { publish(name, value), trigger(name) }.\n  function Element(bubble) {\n    this.bubble = bubble;\n    this.conn = null;\n    this.channel = null;\n    this.name = '';\n    this.pendingAuth = null;\n    this.members = {};\n    this.count = 0;\n    this.options = {};\n    var self = this;\n    this.onState = function (state) { self.connectionChanged(state); };\n  }\n\n  Element.prototype.publish = function (name, value) { this.bubble.publish(name, value); };\n  Element.prototype.trigger = function (name) { this.bubble.trigger(name); };\n\n  Element.prototype.fail = function (message) {\n    this.publish('error', message);\n    this.trigger('error');\n  };\n\n  Element.prototype.update = function (props) {\n    this.options = {\n      events: splitList(props.events),\n      valueKey: String(props.value_key || '').trim(),\n      nameKey: String(props.name_key || '').trim() || 'name'\n    };\n    var key = String(props.app_key || '').trim();\n    if (!key) {\n      this.fail('Enter your Hibira app key in the plugin settings (Plugins tab).');\n      return;\n    }\n    if (!window.Pusher) {\n      this.fail('The Pusher client did not load. Check that cdn.jsdelivr.net is not blocked.');\n      return;\n    }\n    var conn = connect(key, props.host);\n    if (conn !== this.conn) {\n      this.leave();\n      if (this.conn) this.detach();\n      this.conn = conn;\n      conn.listeners.push(this.onState);\n      this.connectionChanged(conn.pusher.connection.state);\n    }\n    var name = String(props.channel || '').trim();\n    if (name !== this.name) {\n      this.leave();\n      if (name) this.join(name);\n    }\n  };\n\n  Element.prototype.detach = function () {\n    var i = this.conn.listeners.indexOf(this.onState);\n    if (i >= 0) this.conn.listeners.splice(i, 1);\n  };\n\n  Element.prototype.connectionChanged = function (state) {\n    this.publish('connection_state', state);\n    this.publish('socket_id', (this.conn && this.conn.pusher.connection.socket_id) || '');\n    if (state === 'connected') this.trigger('connected');\n    if (state === 'unavailable' || state === 'failed' || state === 'disconnected') this.trigger('disconnected');\n  };\n\n  Element.prototype.join = function (name) {\n    var self = this;\n    var conn = this.conn;\n    if (conn.owners[name] && conn.owners[name] !== this) {\n      this.fail('Another Hibira Channel element on this page already uses ' + name + '.');\n      return;\n    }\n    this.name = name;\n    conn.owners[name] = this;\n    var channel = conn.pusher.subscribe(name);\n    this.channel = channel;\n    this.publish('channel_type', channelKind(name));\n\n    channel.bind_global(function (event, data) {\n      if (self.channel !== channel) return;\n      if (event === 'pusher:subscription_succeeded') return self.subscribed(data);\n      if (event === 'pusher:subscription_error') return self.subscriptionFailed(data);\n      if (event === 'pusher:member_added') return self.memberChanged(data, true);\n      if (event === 'pusher:member_removed') return self.memberChanged(data, false);\n      if (event.indexOf('pusher:') === 0 || event.indexOf('pusher_internal:') === 0) return;\n      if (self.options.events.length && self.options.events.indexOf(event) < 0) return;\n      self.received(event, data, name);\n    });\n  };\n\n  Element.prototype.leave = function () {\n    if (!this.channel) { this.name = ''; return; }\n    var name = this.name;\n    this.channel.unbind_global();\n    if (this.conn.owners[name] === this) {\n      delete this.conn.owners[name];\n      this.conn.pusher.unsubscribe(name);\n    }\n    if (this.pendingAuth) {\n      this.pendingAuth.callback(new Error('unsubscribed'), null);\n      clearTimeout(this.pendingAuth.timer);\n      this.pendingAuth = null;\n    }\n    this.channel = null;\n    this.name = '';\n    this.members = {};\n    this.publish('subscribed', false);\n    this.publishMembers();\n  };\n\n  Element.prototype.authorize = function (socketId, channelName, callback) {\n    var self = this;\n    if (this.pendingAuth) clearTimeout(this.pendingAuth.timer);\n    var pending = { callback: callback, channel: channelName };\n    pending.timer = setTimeout(function () {\n      if (self.pendingAuth !== pending) return;\n      self.pendingAuth = null;\n      callback(new Error('No \"Complete authorization\" within 15 seconds. Add a workflow for the \"authorization is needed\" event.'), null);\n    }, AUTH_TIMEOUT_MS);\n    this.pendingAuth = pending;\n    this.publish('auth_socket_id', socketId);\n    this.publish('auth_channel', channelName);\n    this.trigger('authorization_needed');\n  };\n\n  Element.prototype.completeAuthorization = function (props) {\n    var pending = this.pendingAuth;\n    if (!pending) return;\n    this.pendingAuth = null;\n    clearTimeout(pending.timer);\n    var error = String(props.error || '').trim();\n    var auth = String(props.auth || '').trim();\n    if (error || !auth) {\n      pending.callback(new Error(error || 'Authorization was refused (empty auth).'), null);\n      return;\n    }\n    var result = { auth: auth };\n    var channelData = String(props.channel_data || '').trim();\n    if (channelData) result.channel_data = channelData;\n    pending.callback(null, result);\n  };\n\n  Element.prototype.subscribed = function (data) {\n    this.publish('subscribed', true);\n    this.publish('error', '');\n    if (data && data.presence) {\n      this.members = {};\n      var hash = data.presence.hash || {};\n      for (var id in hash) this.members[id] = hash[id];\n      this.publishMembers();\n    } else if (this.channel && this.channel.members && this.channel.members.me) {\n      this.members = {};\n      var self = this;\n      this.channel.members.each(function (m) { self.members[m.id] = m.info; });\n      this.publishMembers();\n    }\n    if (this.channel && this.channel.members && this.channel.members.me) {\n      var me = this.channel.members.me;\n      this.publish('my_id', String(me.id));\n      this.publish('my_name', readKey(me.info, this.options.nameKey));\n    }\n    this.trigger('subscribed');\n  };\n\n  Element.prototype.subscriptionFailed = function (data) {\n    var message = (data && (data.error || data.message)) || ('status ' + ((data && data.status) || 'unknown'));\n    this.publish('subscribed', false);\n    this.fail('Could not subscribe to ' + this.name + ': ' + toText(message));\n  };\n\n  Element.prototype.memberChanged = function (member, joined) {\n    var id = String(member.user_id !== undefined ? member.user_id : member.id);\n    var info = member.user_info !== undefined ? member.user_info : member.info;\n    if (joined) this.members[id] = info;\n    else {\n      info = this.members[id];\n      delete this.members[id];\n    }\n    this.publishMembers();\n    this.publish('member_id', id);\n    this.publish('member_name', readKey(info, this.options.nameKey));\n    this.trigger(joined ? 'member_joined' : 'member_left');\n  };\n\n  Element.prototype.publishMembers = function () {\n    var ids = Object.keys(this.members);\n    var self = this;\n    this.publish('member_ids', ids);\n    this.publish('member_names', ids.map(function (id) { return readKey(self.members[id], self.options.nameKey); }));\n    this.publish('member_count', ids.length);\n  };\n\n  Element.prototype.received = function (event, data, channelName) {\n    this.count += 1;\n    this.publish('last_event', event);\n    this.publish('last_data', toText(data));\n    this.publish('last_value', readKey(data, this.options.valueKey));\n    this.publish('last_channel', channelName);\n    this.publish('event_count', this.count);\n    this.trigger('event_received');\n  };\n\n  Element.prototype.sendClientEvent = function (props) {\n    if (!this.channel || !this.channel.subscribed) {\n      this.fail('Join a private or presence channel before sending client events.');\n      return;\n    }\n    var event = String(props.event || '').trim();\n    if (event.indexOf('client-') !== 0) event = 'client-' + event;\n    var raw = props.data === undefined || props.data === null ? '' : String(props.data);\n    var data;\n    try { data = raw.trim() ? JSON.parse(raw) : {}; } catch (e) { data = { text: raw }; }\n    if (!this.channel.trigger(event, data)) this.fail('Client events need a private or presence channel and client events enabled on the app.');\n  };\n\n  Element.prototype.reconnect = function () {\n    if (!this.conn) return;\n    var p = this.conn.pusher;\n    if (p.connection.state === 'connected' || p.connection.state === 'connecting') return;\n    p.connect();\n  };\n\n  Element.prototype.disconnect = function () {\n    if (this.conn) this.conn.pusher.disconnect();\n  };\n\n  Element.prototype.destroy = function () {\n    this.leave();\n    if (this.conn) this.detach();\n    this.conn = null;\n  };\n\n  window.HibiraBubble = {\n    Element: Element,\n    connect: connect,\n    parseHost: parseHost,\n    readKey: readKey,\n    connections: connections\n  };\n})();\n</script>\n"
+      },
+      "actions": {
+        "AXk": {
+          "caption": "Complete authorization",
+          "doc": "Finish joining a private or presence channel. Run it after \"Hibira - Authorize channel\" in the workflow for this element's \"authorization is needed\" event, with that step's Auth and Channel data.",
+          "fields": {
+            "AXo": {
+              "caption": "Auth",
+              "doc": "Result of step \"Hibira - Authorize channel\"'s Auth. Leave empty to refuse.",
+              "editor": "DynamicValue",
+              "name": "auth",
+              "optional": true,
+              "rank": 0,
+              "value": "text"
+            },
+            "AXp": {
+              "caption": "Channel data",
+              "doc": "Result of step \"Hibira - Authorize channel\"'s Channel data (presence channels only).",
+              "editor": "DynamicValue",
+              "name": "channel_data",
+              "optional": true,
+              "rank": 1,
+              "value": "text"
+            },
+            "AXq": {
+              "caption": "Refuse with message",
+              "doc": "Optional. A reason to refuse this user, shown in the element's Error state.",
+              "editor": "DynamicValue",
+              "name": "error",
+              "optional": true,
+              "rank": 2,
+              "value": "text"
+            }
+          },
+          "code": {
+            "fn": "function(instance, properties, context) {\n    if (instance.data.ready) instance.data.hibira.completeAuthorization(properties);\n}\n"
+          }
+        },
+        "AXl": {
+          "caption": "Send client event",
+          "doc": "Send an event straight from this browser to everyone else on the channel (private and presence channels, with client events enabled on the app). The event name gets the client- prefix if it is missing.",
+          "fields": {
+            "AXr": {
+              "caption": "Event",
+              "editor": "DynamicValue",
+              "name": "event",
+              "rank": 0,
+              "value": "text"
+            },
+            "AXs": {
+              "caption": "Data",
+              "doc": "JSON such as {\"typing\": true}, or plain text (sent as {\"text\": ...}).",
+              "editor": "DynamicValue",
+              "long_text": true,
+              "name": "data",
+              "optional": true,
+              "rank": 1,
+              "value": "text"
+            }
+          },
+          "code": {
+            "fn": "function(instance, properties, context) {\n    if (instance.data.ready) instance.data.hibira.sendClientEvent(properties);\n}\n"
+          }
+        },
+        "AXm": {
+          "caption": "Reconnect",
+          "doc": "Open the connection again after Disconnect. Hibira reconnects by itself after network drops.",
+          "fields": {},
+          "code": {
+            "fn": "function(instance, properties, context) {\n    if (instance.data.ready) instance.data.hibira.reconnect();\n}\n"
+          }
+        },
+        "AXn": {
+          "caption": "Disconnect",
+          "doc": "Close the page's Hibira connection (it is shared by every Hibira Channel element on the page).",
+          "fields": {},
+          "code": {
+            "fn": "function(instance, properties, context) {\n    if (instance.data.ready) instance.data.hibira.disconnect();\n}\n"
+          }
+        }
+      }
+    }
+  },
+  "plugin_actions": {
+    "AYA": {
+      "category": "plugins",
+      "display": "Hibira - Publish event",
+      "doc": "Send an event to one or more channels. Every browser with a Hibira Channel element on those channels gets it.",
+      "fields": {
+        "AYa": {
+          "caption": "Channels",
+          "doc": "One channel, or several separated by commas (at most 100).",
+          "editor": "DynamicValue",
+          "name": "channels",
+          "rank": 0,
+          "value": "text"
+        },
+        "AYb": {
+          "caption": "Event",
+          "doc": "Event name, such as order-updated.",
+          "editor": "DynamicValue",
+          "name": "event",
+          "rank": 1,
+          "value": "text"
+        },
+        "AYc": {
+          "caption": "Data",
+          "doc": "JSON such as {\"status\": \"shipped\"}, or plain text (sent as {\"text\": ...}). Ignored when Data fields is filled in.",
+          "editor": "DynamicValue",
+          "long_text": true,
+          "name": "data",
+          "optional": true,
+          "rank": 2,
+          "value": "text"
+        },
+        "AYd": {
+          "caption": "Data fields",
+          "doc": "Optional. Key/value pairs sent as a JSON object, instead of Data.",
+          "editor": "key_value_list",
+          "name": "data_fields",
+          "optional": true,
+          "rank": 3,
+          "value": "text"
+        },
+        "AYe": {
+          "caption": "Skip socket ID",
+          "doc": "Optional. A Hibira Channel's Socket ID: that browser won't get its own event.",
+          "editor": "DynamicValue",
+          "name": "socket_id",
+          "optional": true,
+          "rank": 4,
+          "value": "text"
+        }
+      },
+      "return_value": {
+        "AYf": {
+          "caption": "Success",
+          "name": "ok",
+          "rank": 0,
+          "value": "boolean"
+        },
+        "AYg": {
+          "caption": "Error message",
+          "name": "error",
+          "rank": 1,
+          "value": "text"
+        }
+      },
+      "type": "server_side",
+      "code": {
+        "server": {
+          "fn": "async function(properties, context) {\n  // ---- Hibira helpers ----\n  // Bubble actions can't share modules, so every action's server.js starts with\n  // this block. Edit tools/helpers.js, then run: node tools/sync-helpers.mjs\n  const crypto = require('crypto');\n  const keys = context.keys || {};\n  const cfg = {\n    appId: String(keys['App ID'] || '').trim(),\n    key: String(keys['App key'] || '').trim(),\n    secret: String(keys['App secret'] || '').trim(),\n    base: apiBase(keys['Host'])\n  };\n\n  function apiBase(raw) {\n    let host = String(raw || '').trim() || 'ws.hibira.io';\n    let scheme = 'https';\n    const m = host.match(/^(wss?|https?):\\/\\//i);\n    if (m) {\n      scheme = /^(wss|https)$/i.test(m[1]) ? 'https' : 'http';\n      host = host.slice(m[0].length);\n    }\n    return scheme + '://' + host.replace(/\\/.*$/, '');\n  }\n\n  function missingKeys(needSecretOnly) {\n    const missing = [];\n    if (!needSecretOnly && !cfg.appId) missing.push('App ID');\n    if (!cfg.key) missing.push('App key');\n    if (!cfg.secret) missing.push('App secret');\n    if (!missing.length) return '';\n    return 'Fill in ' + missing.join(', ') + ' in Plugins > Hibira Realtime. They are on your app page in the Hibira portal (https://hibira.io).';\n  }\n\n  function splitList(value) {\n    const list = Array.isArray(value) ? value : String(value || '').split(/[,\\n]/);\n    return list.map((s) => String(s).trim()).filter((s) => s !== '');\n  }\n\n  function hmac(data) {\n    return crypto.createHmac('sha256', cfg.secret).update(data).digest('hex');\n  }\n\n  // Signs a request like the Pusher HTTP API: auth_* query parameters and an\n  // HMAC-SHA256 of \"METHOD\\nPATH\\nsorted query\", with body_md5 for a body.\n  function signedUrl(method, path, query, body, now) {\n    const q = Object.assign({}, query || {});\n    q.auth_key = cfg.key;\n    q.auth_timestamp = String(Math.floor((now || Date.now()) / 1000));\n    q.auth_version = '1.0';\n    if (body) q.body_md5 = crypto.createHash('md5').update(body).digest('hex');\n    const canonical = Object.keys(q)\n      .map((k) => [k.toLowerCase(), String(q[k])])\n      .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))\n      .map((pair) => pair[0] + '=' + pair[1])\n      .join('&');\n    const signature = hmac(method + '\\n' + path + '\\n' + canonical);\n    return cfg.base + path + '?' + canonical + '&auth_signature=' + signature;\n  }\n\n  async function hibira(method, resource, payload, query) {\n    const path = '/apps/' + encodeURIComponent(cfg.appId) + resource;\n    const body = payload === undefined ? '' : JSON.stringify(payload);\n    const res = await fetch(signedUrl(method, path, query, body), {\n      method: method,\n      headers: body ? { 'Content-Type': 'application/json' } : {},\n      body: body || undefined\n    });\n    const text = await res.text();\n    let json = null;\n    try { json = text ? JSON.parse(text) : {}; } catch (e) { json = null; }\n    if (!res.ok) {\n      const message = (json && (json.error || json.message)) || text || res.statusText;\n      throw new Error('Hibira answered ' + res.status + ': ' + String(message).trim());\n    }\n    return json || {};\n  }\n  // ---- end Hibira helpers ----\n\n  const problem = missingKeys(false);\n  if (problem) return { ok: false, error: problem };\n  const channels = splitList(properties.channels);\n  const event = String(properties.event || '').trim();\n  if (!channels.length) return { ok: false, error: 'Enter at least one channel.' };\n  if (channels.length > 100) return { ok: false, error: 'At most 100 channels per event.' };\n  if (!event) return { ok: false, error: 'Enter an event name.' };\n\n  let data;\n  const pairs = properties.data_fields || [];\n  if (pairs.length) {\n    const obj = {};\n    pairs.forEach((pair) => { if (pair && pair.key) obj[pair.key] = pair.value; });\n    data = JSON.stringify(obj);\n  } else {\n    const raw = properties.data === undefined || properties.data === null ? '' : String(properties.data);\n    try { JSON.parse(raw); data = raw; } catch (e) { data = JSON.stringify({ text: raw }); }\n    if (raw.trim() === '') data = '{}';\n  }\n\n  const body = { name: event, channels: channels, data: data };\n  const socketId = String(properties.socket_id || '').trim();\n  if (socketId) body.socket_id = socketId;\n  try {\n    await hibira('POST', '/events', body);\n    return { ok: true, error: '' };\n  } catch (e) {\n    return { ok: false, error: e.message };\n  }\n}\n"
+        },
+        "client": {
+          "fn": "function(properties, context) {\n\n}\n"
+        }
+      }
+    },
+    "AYB": {
+      "category": "plugins",
+      "display": "Hibira - Authorize channel",
+      "doc": "Sign a private or presence channel subscription for the current user. Use it in the workflow for a Hibira Channel's \"authorization is needed\" event, before the element's \"Complete authorization\". Add an Only when condition to decide who may join.",
+      "fields": {
+        "AYh": {
+          "caption": "Socket ID",
+          "doc": "The element's Auth socket ID.",
+          "editor": "DynamicValue",
+          "name": "socket_id",
+          "rank": 0,
+          "value": "text"
+        },
+        "AYi": {
+          "caption": "Channel",
+          "doc": "The element's Auth channel.",
+          "editor": "DynamicValue",
+          "name": "channel",
+          "rank": 1,
+          "value": "text"
+        },
+        "AYj": {
+          "caption": "User ID",
+          "doc": "Presence channels: a stable ID, such as Current User's unique id.",
+          "editor": "DynamicValue",
+          "name": "user_id",
+          "optional": true,
+          "rank": 2,
+          "value": "text"
+        },
+        "AYk": {
+          "caption": "User name",
+          "doc": "Presence channels: the name others see (stored as name in the member's info).",
+          "editor": "DynamicValue",
+          "name": "user_name",
+          "optional": true,
+          "rank": 3,
+          "value": "text"
+        },
+        "AYl": {
+          "caption": "User info (JSON)",
+          "doc": "Presence channels, optional: more member info as a JSON object, such as {\"avatar\": \"https://...\"}.",
+          "editor": "DynamicValue",
+          "long_text": true,
+          "name": "user_info",
+          "optional": true,
+          "rank": 4,
+          "value": "text"
+        }
+      },
+      "return_value": {
+        "AYm": {
+          "caption": "Auth",
+          "name": "auth",
+          "rank": 0,
+          "value": "text"
+        },
+        "AYn": {
+          "caption": "Channel data",
+          "name": "channel_data",
+          "rank": 1,
+          "value": "text"
+        },
+        "AYo": {
+          "caption": "Error message",
+          "name": "error",
+          "rank": 2,
+          "value": "text"
+        }
+      },
+      "type": "server_side",
+      "code": {
+        "server": {
+          "fn": "async function(properties, context) {\n  // ---- Hibira helpers ----\n  // Bubble actions can't share modules, so every action's server.js starts with\n  // this block. Edit tools/helpers.js, then run: node tools/sync-helpers.mjs\n  const crypto = require('crypto');\n  const keys = context.keys || {};\n  const cfg = {\n    appId: String(keys['App ID'] || '').trim(),\n    key: String(keys['App key'] || '').trim(),\n    secret: String(keys['App secret'] || '').trim(),\n    base: apiBase(keys['Host'])\n  };\n\n  function apiBase(raw) {\n    let host = String(raw || '').trim() || 'ws.hibira.io';\n    let scheme = 'https';\n    const m = host.match(/^(wss?|https?):\\/\\//i);\n    if (m) {\n      scheme = /^(wss|https)$/i.test(m[1]) ? 'https' : 'http';\n      host = host.slice(m[0].length);\n    }\n    return scheme + '://' + host.replace(/\\/.*$/, '');\n  }\n\n  function missingKeys(needSecretOnly) {\n    const missing = [];\n    if (!needSecretOnly && !cfg.appId) missing.push('App ID');\n    if (!cfg.key) missing.push('App key');\n    if (!cfg.secret) missing.push('App secret');\n    if (!missing.length) return '';\n    return 'Fill in ' + missing.join(', ') + ' in Plugins > Hibira Realtime. They are on your app page in the Hibira portal (https://hibira.io).';\n  }\n\n  function splitList(value) {\n    const list = Array.isArray(value) ? value : String(value || '').split(/[,\\n]/);\n    return list.map((s) => String(s).trim()).filter((s) => s !== '');\n  }\n\n  function hmac(data) {\n    return crypto.createHmac('sha256', cfg.secret).update(data).digest('hex');\n  }\n\n  // Signs a request like the Pusher HTTP API: auth_* query parameters and an\n  // HMAC-SHA256 of \"METHOD\\nPATH\\nsorted query\", with body_md5 for a body.\n  function signedUrl(method, path, query, body, now) {\n    const q = Object.assign({}, query || {});\n    q.auth_key = cfg.key;\n    q.auth_timestamp = String(Math.floor((now || Date.now()) / 1000));\n    q.auth_version = '1.0';\n    if (body) q.body_md5 = crypto.createHash('md5').update(body).digest('hex');\n    const canonical = Object.keys(q)\n      .map((k) => [k.toLowerCase(), String(q[k])])\n      .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))\n      .map((pair) => pair[0] + '=' + pair[1])\n      .join('&');\n    const signature = hmac(method + '\\n' + path + '\\n' + canonical);\n    return cfg.base + path + '?' + canonical + '&auth_signature=' + signature;\n  }\n\n  async function hibira(method, resource, payload, query) {\n    const path = '/apps/' + encodeURIComponent(cfg.appId) + resource;\n    const body = payload === undefined ? '' : JSON.stringify(payload);\n    const res = await fetch(signedUrl(method, path, query, body), {\n      method: method,\n      headers: body ? { 'Content-Type': 'application/json' } : {},\n      body: body || undefined\n    });\n    const text = await res.text();\n    let json = null;\n    try { json = text ? JSON.parse(text) : {}; } catch (e) { json = null; }\n    if (!res.ok) {\n      const message = (json && (json.error || json.message)) || text || res.statusText;\n      throw new Error('Hibira answered ' + res.status + ': ' + String(message).trim());\n    }\n    return json || {};\n  }\n  // ---- end Hibira helpers ----\n\n  const problem = missingKeys(true);\n  if (problem) return { auth: '', channel_data: '', error: problem };\n  const socketId = String(properties.socket_id || '').trim();\n  const channel = String(properties.channel || '').trim();\n  if (!/^\\d+\\.\\d+$/.test(socketId)) return { auth: '', channel_data: '', error: 'Socket ID is missing or invalid: use the element\\'s Auth socket ID.' };\n  if (!/^(private|presence)-[A-Za-z0-9_\\-=@,.;]+$/.test(channel)) {\n    return { auth: '', channel_data: '', error: 'Only private- and presence- channels need authorization: ' + (channel || '(empty)') };\n  }\n  if (channel.indexOf('presence-') !== 0) {\n    return { auth: cfg.key + ':' + hmac(socketId + ':' + channel), channel_data: '', error: '' };\n  }\n\n  const userId = String(properties.user_id || '').trim();\n  if (!userId) return { auth: '', channel_data: '', error: 'Presence channels need a User ID, such as Current User\\'s unique id.' };\n  let info = {};\n  const rawInfo = String(properties.user_info || '').trim();\n  if (rawInfo) {\n    try { info = JSON.parse(rawInfo); } catch (e) { return { auth: '', channel_data: '', error: 'User info must be a JSON object.' }; }\n    if (info === null || typeof info !== 'object' || Array.isArray(info)) return { auth: '', channel_data: '', error: 'User info must be a JSON object.' };\n  }\n  const name = String(properties.user_name || '').trim();\n  if (name) info.name = name;\n  const channelData = JSON.stringify({ user_id: userId, user_info: info });\n  return { auth: cfg.key + ':' + hmac(socketId + ':' + channel + ':' + channelData), channel_data: channelData, error: '' };\n}\n"
+        },
+        "client": {
+          "fn": "function(properties, context) {\n\n}\n"
+        }
+      }
+    },
+    "AYC": {
+      "category": "plugins",
+      "display": "Hibira - Request approval",
+      "doc": "Ask a person to approve or reject something. Hibira gives you a link to share (and can announce it on a channel or by push); check the answer with \"Hibira - Get approval\".",
+      "fields": {
+        "AYp": {
+          "caption": "Title",
+          "doc": "What needs a decision, such as Refund order #1042 ($180)?",
+          "editor": "DynamicValue",
+          "name": "title",
+          "rank": 0,
+          "value": "text"
+        },
+        "AYq": {
+          "caption": "Details",
+          "doc": "Optional. More context shown on the approval page.",
+          "editor": "DynamicValue",
+          "long_text": true,
+          "name": "details",
+          "optional": true,
+          "rank": 1,
+          "value": "text"
+        },
+        "AYr": {
+          "caption": "Choices",
+          "doc": "Optional. Comma-separated answers. Default: Approve, Reject.",
+          "editor": "DynamicValue",
+          "name": "choices",
+          "optional": true,
+          "rank": 2,
+          "value": "text"
+        },
+        "AYs": {
+          "caption": "Expires in (minutes)",
+          "doc": "Optional. Default 60.",
+          "editor": "DynamicValue",
+          "name": "expires_in_minutes",
+          "optional": true,
+          "rank": 3,
+          "value": "number"
+        },
+        "AYt": {
+          "caption": "Channel",
+          "doc": "Optional. A channel to announce the request and its answer on, such as private-hibira-approvals.ops.",
+          "editor": "DynamicValue",
+          "name": "channel",
+          "optional": true,
+          "rank": 4,
+          "value": "text"
+        },
+        "AYu": {
+          "caption": "Asked by",
+          "doc": "Optional. Who is asking, shown on the approval page. Default: Workflow.",
+          "editor": "DynamicValue",
+          "name": "agent",
+          "optional": true,
+          "rank": 5,
+          "value": "text"
+        },
+        "AYv": {
+          "caption": "Push to users",
+          "doc": "Optional. Comma-separated Hibira push user IDs to notify.",
+          "editor": "DynamicValue",
+          "name": "push_users",
+          "optional": true,
+          "rank": 6,
+          "value": "text"
+        },
+        "AYw": {
+          "caption": "Push to interests",
+          "doc": "Optional. Comma-separated push interests to notify.",
+          "editor": "DynamicValue",
+          "name": "push_interests",
+          "optional": true,
+          "rank": 7,
+          "value": "text"
+        }
+      },
+      "return_value": {
+        "AYx": {
+          "caption": "Approval ID",
+          "name": "approval_id",
+          "rank": 0,
+          "value": "text"
+        },
+        "AYy": {
+          "caption": "Approval link",
+          "name": "url",
+          "rank": 1,
+          "value": "text"
+        },
+        "AYz": {
+          "caption": "Status",
+          "name": "status",
+          "rank": 2,
+          "value": "text"
+        },
+        "AZA": {
+          "caption": "Error message",
+          "name": "error",
+          "rank": 3,
+          "value": "text"
+        }
+      },
+      "type": "server_side",
+      "code": {
+        "server": {
+          "fn": "async function(properties, context) {\n  // ---- Hibira helpers ----\n  // Bubble actions can't share modules, so every action's server.js starts with\n  // this block. Edit tools/helpers.js, then run: node tools/sync-helpers.mjs\n  const crypto = require('crypto');\n  const keys = context.keys || {};\n  const cfg = {\n    appId: String(keys['App ID'] || '').trim(),\n    key: String(keys['App key'] || '').trim(),\n    secret: String(keys['App secret'] || '').trim(),\n    base: apiBase(keys['Host'])\n  };\n\n  function apiBase(raw) {\n    let host = String(raw || '').trim() || 'ws.hibira.io';\n    let scheme = 'https';\n    const m = host.match(/^(wss?|https?):\\/\\//i);\n    if (m) {\n      scheme = /^(wss|https)$/i.test(m[1]) ? 'https' : 'http';\n      host = host.slice(m[0].length);\n    }\n    return scheme + '://' + host.replace(/\\/.*$/, '');\n  }\n\n  function missingKeys(needSecretOnly) {\n    const missing = [];\n    if (!needSecretOnly && !cfg.appId) missing.push('App ID');\n    if (!cfg.key) missing.push('App key');\n    if (!cfg.secret) missing.push('App secret');\n    if (!missing.length) return '';\n    return 'Fill in ' + missing.join(', ') + ' in Plugins > Hibira Realtime. They are on your app page in the Hibira portal (https://hibira.io).';\n  }\n\n  function splitList(value) {\n    const list = Array.isArray(value) ? value : String(value || '').split(/[,\\n]/);\n    return list.map((s) => String(s).trim()).filter((s) => s !== '');\n  }\n\n  function hmac(data) {\n    return crypto.createHmac('sha256', cfg.secret).update(data).digest('hex');\n  }\n\n  // Signs a request like the Pusher HTTP API: auth_* query parameters and an\n  // HMAC-SHA256 of \"METHOD\\nPATH\\nsorted query\", with body_md5 for a body.\n  function signedUrl(method, path, query, body, now) {\n    const q = Object.assign({}, query || {});\n    q.auth_key = cfg.key;\n    q.auth_timestamp = String(Math.floor((now || Date.now()) / 1000));\n    q.auth_version = '1.0';\n    if (body) q.body_md5 = crypto.createHash('md5').update(body).digest('hex');\n    const canonical = Object.keys(q)\n      .map((k) => [k.toLowerCase(), String(q[k])])\n      .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))\n      .map((pair) => pair[0] + '=' + pair[1])\n      .join('&');\n    const signature = hmac(method + '\\n' + path + '\\n' + canonical);\n    return cfg.base + path + '?' + canonical + '&auth_signature=' + signature;\n  }\n\n  async function hibira(method, resource, payload, query) {\n    const path = '/apps/' + encodeURIComponent(cfg.appId) + resource;\n    const body = payload === undefined ? '' : JSON.stringify(payload);\n    const res = await fetch(signedUrl(method, path, query, body), {\n      method: method,\n      headers: body ? { 'Content-Type': 'application/json' } : {},\n      body: body || undefined\n    });\n    const text = await res.text();\n    let json = null;\n    try { json = text ? JSON.parse(text) : {}; } catch (e) { json = null; }\n    if (!res.ok) {\n      const message = (json && (json.error || json.message)) || text || res.statusText;\n      throw new Error('Hibira answered ' + res.status + ': ' + String(message).trim());\n    }\n    return json || {};\n  }\n  // ---- end Hibira helpers ----\n\n  const empty = { approval_id: '', url: '', status: '', error: '' };\n  const problem = missingKeys(false);\n  if (problem) return Object.assign(empty, { error: problem });\n  const title = String(properties.title || '').trim();\n  if (!title) return Object.assign(empty, { error: 'Enter a title for the approval request.' });\n  const body = { title: title };\n  const choices = splitList(properties.choices);\n  if (choices.length) body.options = choices;\n  if (properties.details) body.details = String(properties.details);\n  if (properties.expires_in_minutes) body.expires_in_minutes = Math.round(Number(properties.expires_in_minutes));\n  if (properties.channel) body.channel = String(properties.channel).trim();\n  if (properties.agent) body.agent = String(properties.agent).trim();\n  const users = splitList(properties.push_users);\n  if (users.length) body.push_users = users;\n  const interests = splitList(properties.push_interests);\n  if (interests.length) body.push_interests = interests;\n  try {\n    const out = await hibira('POST', '/approvals', body);\n    return { approval_id: String(out.approval_id || ''), url: String(out.url || ''), status: String(out.status || ''), error: '' };\n  } catch (e) {\n    return Object.assign(empty, { error: e.message });\n  }\n}\n"
+        },
+        "client": {
+          "fn": "function(properties, context) {\n\n}\n"
+        }
+      }
+    },
+    "AYD": {
+      "category": "plugins",
+      "display": "Hibira - Get approval",
+      "doc": "Get the answer to an approval request. Status is pending, approved, rejected or expired.",
+      "fields": {
+        "AZB": {
+          "caption": "Approval ID",
+          "doc": "From \"Hibira - Request approval\".",
+          "editor": "DynamicValue",
+          "name": "approval_id",
+          "rank": 0,
+          "value": "text"
+        },
+        "AZC": {
+          "caption": "Wait (seconds)",
+          "doc": "Optional, 0 to 25. Wait this long for an answer before returning pending.",
+          "editor": "DynamicValue",
+          "name": "wait_seconds",
+          "optional": true,
+          "rank": 1,
+          "value": "number"
+        }
+      },
+      "return_value": {
+        "AZD": {
+          "caption": "Status",
+          "name": "status",
+          "rank": 0,
+          "value": "text"
+        },
+        "AZE": {
+          "caption": "Answered",
+          "name": "answered",
+          "rank": 1,
+          "value": "boolean"
+        },
+        "AZF": {
+          "caption": "Choice",
+          "name": "choice",
+          "rank": 2,
+          "value": "text"
+        },
+        "AZG": {
+          "caption": "Comment",
+          "name": "comment",
+          "rank": 3,
+          "value": "text"
+        },
+        "AZH": {
+          "caption": "Error message",
+          "name": "error",
+          "rank": 4,
+          "value": "text"
+        }
+      },
+      "type": "server_side",
+      "code": {
+        "server": {
+          "fn": "async function(properties, context) {\n  // ---- Hibira helpers ----\n  // Bubble actions can't share modules, so every action's server.js starts with\n  // this block. Edit tools/helpers.js, then run: node tools/sync-helpers.mjs\n  const crypto = require('crypto');\n  const keys = context.keys || {};\n  const cfg = {\n    appId: String(keys['App ID'] || '').trim(),\n    key: String(keys['App key'] || '').trim(),\n    secret: String(keys['App secret'] || '').trim(),\n    base: apiBase(keys['Host'])\n  };\n\n  function apiBase(raw) {\n    let host = String(raw || '').trim() || 'ws.hibira.io';\n    let scheme = 'https';\n    const m = host.match(/^(wss?|https?):\\/\\//i);\n    if (m) {\n      scheme = /^(wss|https)$/i.test(m[1]) ? 'https' : 'http';\n      host = host.slice(m[0].length);\n    }\n    return scheme + '://' + host.replace(/\\/.*$/, '');\n  }\n\n  function missingKeys(needSecretOnly) {\n    const missing = [];\n    if (!needSecretOnly && !cfg.appId) missing.push('App ID');\n    if (!cfg.key) missing.push('App key');\n    if (!cfg.secret) missing.push('App secret');\n    if (!missing.length) return '';\n    return 'Fill in ' + missing.join(', ') + ' in Plugins > Hibira Realtime. They are on your app page in the Hibira portal (https://hibira.io).';\n  }\n\n  function splitList(value) {\n    const list = Array.isArray(value) ? value : String(value || '').split(/[,\\n]/);\n    return list.map((s) => String(s).trim()).filter((s) => s !== '');\n  }\n\n  function hmac(data) {\n    return crypto.createHmac('sha256', cfg.secret).update(data).digest('hex');\n  }\n\n  // Signs a request like the Pusher HTTP API: auth_* query parameters and an\n  // HMAC-SHA256 of \"METHOD\\nPATH\\nsorted query\", with body_md5 for a body.\n  function signedUrl(method, path, query, body, now) {\n    const q = Object.assign({}, query || {});\n    q.auth_key = cfg.key;\n    q.auth_timestamp = String(Math.floor((now || Date.now()) / 1000));\n    q.auth_version = '1.0';\n    if (body) q.body_md5 = crypto.createHash('md5').update(body).digest('hex');\n    const canonical = Object.keys(q)\n      .map((k) => [k.toLowerCase(), String(q[k])])\n      .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))\n      .map((pair) => pair[0] + '=' + pair[1])\n      .join('&');\n    const signature = hmac(method + '\\n' + path + '\\n' + canonical);\n    return cfg.base + path + '?' + canonical + '&auth_signature=' + signature;\n  }\n\n  async function hibira(method, resource, payload, query) {\n    const path = '/apps/' + encodeURIComponent(cfg.appId) + resource;\n    const body = payload === undefined ? '' : JSON.stringify(payload);\n    const res = await fetch(signedUrl(method, path, query, body), {\n      method: method,\n      headers: body ? { 'Content-Type': 'application/json' } : {},\n      body: body || undefined\n    });\n    const text = await res.text();\n    let json = null;\n    try { json = text ? JSON.parse(text) : {}; } catch (e) { json = null; }\n    if (!res.ok) {\n      const message = (json && (json.error || json.message)) || text || res.statusText;\n      throw new Error('Hibira answered ' + res.status + ': ' + String(message).trim());\n    }\n    return json || {};\n  }\n  // ---- end Hibira helpers ----\n\n  const empty = { status: '', answered: false, choice: '', comment: '', error: '' };\n  const problem = missingKeys(false);\n  if (problem) return Object.assign(empty, { error: problem });\n  const id = String(properties.approval_id || '').trim();\n  if (!id) return Object.assign(empty, { error: 'Enter the Approval ID from \"Hibira - Request approval\".' });\n  const wait = Math.max(0, Math.min(25, Math.round(Number(properties.wait_seconds) || 0)));\n  try {\n    const out = await hibira('GET', '/approvals/' + encodeURIComponent(id), undefined, wait ? { wait: String(wait) } : {});\n    const status = String(out.status || '');\n    return {\n      status: status,\n      answered: status === 'approved' || status === 'rejected',\n      choice: String(out.choice || ''),\n      comment: String(out.comment || ''),\n      error: ''\n    };\n  } catch (e) {\n    return Object.assign(empty, { error: e.message });\n  }\n}\n"
+        },
+        "client": {
+          "fn": "function(properties, context) {\n\n}\n"
+        }
+      }
+    },
+    "AYE": {
+      "category": "plugins",
+      "display": "Hibira - Get channel users",
+      "doc": "List the users online in a presence channel, from the server.",
+      "fields": {
+        "AZI": {
+          "caption": "Channel",
+          "doc": "A presence- channel.",
+          "editor": "DynamicValue",
+          "name": "channel",
+          "rank": 0,
+          "value": "text"
+        }
+      },
+      "return_value": {
+        "AZJ": {
+          "caption": "User IDs",
+          "is_list": true,
+          "name": "user_ids",
+          "rank": 0,
+          "value": "text"
+        },
+        "AZK": {
+          "caption": "User count",
+          "name": "user_count",
+          "rank": 1,
+          "value": "number"
+        },
+        "AZL": {
+          "caption": "Error message",
+          "name": "error",
+          "rank": 2,
+          "value": "text"
+        }
+      },
+      "type": "server_side",
+      "code": {
+        "server": {
+          "fn": "async function(properties, context) {\n  // ---- Hibira helpers ----\n  // Bubble actions can't share modules, so every action's server.js starts with\n  // this block. Edit tools/helpers.js, then run: node tools/sync-helpers.mjs\n  const crypto = require('crypto');\n  const keys = context.keys || {};\n  const cfg = {\n    appId: String(keys['App ID'] || '').trim(),\n    key: String(keys['App key'] || '').trim(),\n    secret: String(keys['App secret'] || '').trim(),\n    base: apiBase(keys['Host'])\n  };\n\n  function apiBase(raw) {\n    let host = String(raw || '').trim() || 'ws.hibira.io';\n    let scheme = 'https';\n    const m = host.match(/^(wss?|https?):\\/\\//i);\n    if (m) {\n      scheme = /^(wss|https)$/i.test(m[1]) ? 'https' : 'http';\n      host = host.slice(m[0].length);\n    }\n    return scheme + '://' + host.replace(/\\/.*$/, '');\n  }\n\n  function missingKeys(needSecretOnly) {\n    const missing = [];\n    if (!needSecretOnly && !cfg.appId) missing.push('App ID');\n    if (!cfg.key) missing.push('App key');\n    if (!cfg.secret) missing.push('App secret');\n    if (!missing.length) return '';\n    return 'Fill in ' + missing.join(', ') + ' in Plugins > Hibira Realtime. They are on your app page in the Hibira portal (https://hibira.io).';\n  }\n\n  function splitList(value) {\n    const list = Array.isArray(value) ? value : String(value || '').split(/[,\\n]/);\n    return list.map((s) => String(s).trim()).filter((s) => s !== '');\n  }\n\n  function hmac(data) {\n    return crypto.createHmac('sha256', cfg.secret).update(data).digest('hex');\n  }\n\n  // Signs a request like the Pusher HTTP API: auth_* query parameters and an\n  // HMAC-SHA256 of \"METHOD\\nPATH\\nsorted query\", with body_md5 for a body.\n  function signedUrl(method, path, query, body, now) {\n    const q = Object.assign({}, query || {});\n    q.auth_key = cfg.key;\n    q.auth_timestamp = String(Math.floor((now || Date.now()) / 1000));\n    q.auth_version = '1.0';\n    if (body) q.body_md5 = crypto.createHash('md5').update(body).digest('hex');\n    const canonical = Object.keys(q)\n      .map((k) => [k.toLowerCase(), String(q[k])])\n      .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))\n      .map((pair) => pair[0] + '=' + pair[1])\n      .join('&');\n    const signature = hmac(method + '\\n' + path + '\\n' + canonical);\n    return cfg.base + path + '?' + canonical + '&auth_signature=' + signature;\n  }\n\n  async function hibira(method, resource, payload, query) {\n    const path = '/apps/' + encodeURIComponent(cfg.appId) + resource;\n    const body = payload === undefined ? '' : JSON.stringify(payload);\n    const res = await fetch(signedUrl(method, path, query, body), {\n      method: method,\n      headers: body ? { 'Content-Type': 'application/json' } : {},\n      body: body || undefined\n    });\n    const text = await res.text();\n    let json = null;\n    try { json = text ? JSON.parse(text) : {}; } catch (e) { json = null; }\n    if (!res.ok) {\n      const message = (json && (json.error || json.message)) || text || res.statusText;\n      throw new Error('Hibira answered ' + res.status + ': ' + String(message).trim());\n    }\n    return json || {};\n  }\n  // ---- end Hibira helpers ----\n\n  const empty = { user_ids: [], user_count: 0, error: '' };\n  const problem = missingKeys(false);\n  if (problem) return Object.assign(empty, { error: problem });\n  const channel = String(properties.channel || '').trim();\n  if (channel.indexOf('presence-') !== 0) return Object.assign(empty, { error: 'Enter a presence- channel.' });\n  try {\n    const out = await hibira('GET', '/channels/' + encodeURIComponent(channel) + '/users');\n    const ids = (out.users || []).map((u) => String(u.id));\n    return { user_ids: ids, user_count: ids.length, error: '' };\n  } catch (e) {\n    return Object.assign(empty, { error: e.message });\n  }\n}\n"
+        },
+        "client": {
+          "fn": "function(properties, context) {\n\n}\n"
+        }
+      }
+    }
+  }
+}
